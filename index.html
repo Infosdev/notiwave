@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notiwave — WhatsApp automation for Indian small businesses</title>
+<meta name="description" content="Send appointment reminders, order updates and payment alerts on WhatsApp — automatically. Built for clinics, restaurants, coaching centres and retail shops in India.">
+<meta name="author" content="Dev Tech Pvt Ltd">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23075E54'/><text x='32' y='44' font-size='36' font-family='Arial' font-weight='bold' text-anchor='middle' fill='%23D9FDD3'>N</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============ TOKENS — dark, current-trend palette ============ */
+:root{
+  --bg:#0A0F0D;
+  --bg-2:#0F1613;
+  --surface:rgba(255,255,255,.045);
+  --surface-2:rgba(255,255,255,.07);
+  --ink:#EDF2EF;
+  --muted:#94A39C;
+  --teal:#12A883;
+  --teal-2:#0A7A6D;
+  --green:#4CE897;
+  --green-2:#25D366;
+  --lime:#C7F970;
+  --sky:#5ECBF2;
+  --violet:#B79CF9;
+  --bubble:#D9FDD3;
+  --white:#FFFFFF;
+  --line:rgba(255,255,255,.10);
+  --line-soft:rgba(255,255,255,.06);
+  --shadow-s:0 2px 10px rgba(0,0,0,.25);
+  --shadow-m:0 16px 40px rgba(0,0,0,.35);
+  --shadow-l:0 40px 90px rgba(0,0,0,.55);
+  --glow:0 0 0 1px rgba(76,232,151,.12),0 20px 60px rgba(76,232,151,.12);
+  --r:22px;
+  --display:'Bricolage Grotesque',sans-serif;
+  --body:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--body);color:var(--ink);background:var(--bg);line-height:1.6;
+  overflow-x:hidden;position:relative;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(60vw 60vw at 8% -10%, rgba(76,232,151,.16), transparent 60%),
+    radial-gradient(50vw 50vw at 95% 8%, rgba(94,203,242,.13), transparent 60%),
+    radial-gradient(55vw 55vw at 50% 105%, rgba(183,156,249,.10), transparent 60%),
+    var(--bg);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px);
+  background-size:28px 28px;mask-image:radial-gradient(120% 90% at 50% 0%,#000,transparent);
+}
+a{color:inherit}
+button{font:inherit}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+::selection{background:var(--green);color:#06110D}
+
+/* reveal on scroll */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+.rv.on{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  .rv{opacity:1;transform:none;transition:none}
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
+
+/* ============ HEADER ============ */
+header{
+  position:sticky;top:0;z-index:90;
+  background:rgba(10,15,13,.72);backdrop-filter:blur(16px) saturate(160%);
+  border-bottom:1px solid var(--line-soft);
+}
+.nav{display:flex;align-items:center;justify-content:space-between;height:66px}
+.logo{font-family:var(--display);font-weight:800;font-size:1.35rem;letter-spacing:-.02em;text-decoration:none;display:flex;align-items:center;gap:9px;color:#fff}
+.logo-mark{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--sky));color:#06120D;display:grid;place-items:center;font-size:1.05rem;box-shadow:0 4px 16px rgba(76,232,151,.35)}
+.nav-links{display:flex;gap:26px;align-items:center;font-size:.92rem;font-weight:500}
+.nav-links a{text-decoration:none;color:var(--muted);transition:color .15s}
+.nav-links a:hover{color:#fff}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--surface-2);color:#fff;text-decoration:none;border:1px solid var(--line);
+  padding:12px 26px;border-radius:999px;font-weight:600;font-size:.95rem;
+  cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s;
+  box-shadow:var(--shadow-s);
+}
+.btn:hover{transform:translateY(-2px);background:var(--line)}
+.btn:active{transform:translateY(0)}
+.btn.green{background:linear-gradient(135deg,var(--green),var(--lime));color:#06110D;border:none;box-shadow:0 6px 20px rgba(76,232,151,.35)}
+.btn.green:hover{box-shadow:0 12px 32px rgba(76,232,151,.5)}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);box-shadow:none}
+.btn:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+
+/* hamburger */
+.burger{display:none;background:none;border:none;cursor:pointer;padding:8px}
+.burger span{display:block;width:22px;height:2.4px;background:#fff;margin:5px 0;border-radius:2px;transition:.25s}
+.burger.open span:nth-child(1){transform:translateY(7.4px) rotate(45deg)}
+.burger.open span:nth-child(2){opacity:0}
+.burger.open span:nth-child(3){transform:translateY(-7.4px) rotate(-45deg)}
+.mobile-menu{
+  display:none;position:fixed;inset:66px 0 auto 0;z-index:89;
+  background:rgba(10,15,13,.97);backdrop-filter:blur(16px);border-bottom:1px solid var(--line-soft);
+  padding:18px 24px 26px;box-shadow:var(--shadow-m);
+}
+.mobile-menu.open{display:block}
+.mobile-menu a{display:block;padding:13px 0;text-decoration:none;font-weight:600;color:var(--ink);border-bottom:1px dashed var(--line-soft)}
+.mobile-menu a:last-child{border:none}
+
+/* ============ HERO ============ */
+.hero{padding:70px 0 50px;display:grid;grid-template-columns:1.12fr .88fr;gap:52px;align-items:center}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:7px;font-size:.78rem;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--lime);
+  background:var(--surface);border:1px solid var(--line);
+  padding:7px 15px;border-radius:999px;margin-bottom:20px;backdrop-filter:blur(8px);
+}
+.eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.6s infinite;box-shadow:0 0 10px var(--green)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
+h1{
+  font-family:var(--display);font-weight:800;letter-spacing:-.03em;color:#fff;
+  font-size:clamp(2.4rem,5.2vw,3.8rem);line-height:1.06;margin-bottom:20px;
+}
+h1 .hl{
+  background:linear-gradient(100deg,var(--green),var(--lime) 60%,var(--sky));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  position:relative;white-space:nowrap;
+}
+.lede{font-size:1.12rem;color:var(--muted);max-width:33rem;margin-bottom:30px}
+
+/* waitlist form */
+.waitlist{display:flex;gap:10px;max-width:31rem;flex-wrap:wrap}
+.waitlist input{
+  flex:1;min-width:220px;padding:14px 20px;border-radius:999px;
+  border:1.5px solid var(--line);background:var(--surface);color:#fff;font:inherit;font-size:.95rem;
+  backdrop-filter:blur(8px);transition:border .15s,box-shadow .15s;
+}
+.waitlist input::placeholder{color:var(--muted)}
+.waitlist input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 4px rgba(76,232,151,.18)}
+.form-note{font-size:.82rem;color:var(--muted);margin-top:12px;display:flex;gap:16px;flex-wrap:wrap}
+.form-note span::before{content:"✓ ";color:var(--green);font-weight:700}
+.form-ok{
+  display:none;margin-top:14px;background:var(--surface-2);border:1px solid rgba(76,232,151,.35);color:#fff;
+  border-radius:14px;padding:14px 18px;font-size:.92rem;
+  animation:pop .4s ease;
+}
+.stats{display:flex;gap:34px;margin-top:38px;flex-wrap:wrap}
+.stat .v{font-family:var(--display);font-weight:800;font-size:1.7rem;letter-spacing:-.02em;color:#fff}
+.stat .l{font-size:.8rem;color:var(--muted)}
+
+/* ============ PHONE ============ */
+.phone-zone{position:relative}
+.phone{
+  width:305px;max-width:100%;margin:0 auto;border-radius:40px;
+  background:linear-gradient(160deg,#1c1c1c,#000);padding:11px;
+  box-shadow:var(--shadow-l);position:relative;z-index:2;
+}
+.phone::before{
+  content:"";position:absolute;top:11px;left:50%;transform:translateX(-50%);
+  width:110px;height:24px;background:#000;border-radius:0 0 16px 16px;z-index:5;
+}
+.screen{border-radius:30px;overflow:hidden;background:#EFE7DC;display:flex;flex-direction:column;height:540px}
+.chat-top{background:linear-gradient(120deg,#0C4A3E,#0A7A6D);color:#fff;padding:30px 14px 12px;display:flex;align-items:center;gap:10px}
+.chat-top .avatar{width:34px;height:34px;border-radius:50%;background:var(--lime);color:#0C4A3E;display:grid;place-items:center;font-weight:700;font-family:var(--display);flex:none}
+.chat-top .name{font-size:.9rem;font-weight:600;line-height:1.2}
+.chat-top .status{font-size:.7rem;opacity:.85}
+.chat-body{
+  flex:1;padding:14px 12px;display:flex;flex-direction:column;gap:10px;overflow:hidden;
+  background-image:radial-gradient(rgba(11,61,54,.06) 1.2px,transparent 1.2px);
+  background-size:20px 20px;
+}
+.msg{
+  max-width:86%;padding:9px 12px;border-radius:13px;font-size:.8rem;line-height:1.45;
+  box-shadow:0 1px 2px rgba(0,0,0,.08);
+  opacity:0;transform:translateY(14px) scale(.97);
+  animation:pop .4s ease forwards;position:relative;
+}
+.msg .time{display:block;font-size:.62rem;color:rgba(0,0,0,.4);text-align:right;margin-top:3px}
+.msg .time .tick{color:#4FB6EC;font-weight:700}
+.msg.out{background:var(--bubble);align-self:flex-end;border-bottom-right-radius:4px}
+.msg.in{background:#fff;align-self:flex-start;border-bottom-left-radius:4px}
+.msg b{font-weight:600}
+.typing{
+  align-self:flex-end;background:var(--bubble);border-radius:13px;border-bottom-right-radius:4px;
+  padding:12px 14px;display:flex;gap:5px;opacity:0;animation:pop .3s ease forwards;
+  box-shadow:0 1px 2px rgba(0,0,0,.08);
+}
+.typing i{width:6px;height:6px;border-radius:50%;background:rgba(11,61,54,.45);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.18s}
+.typing i:nth-child(3){animation-delay:.36s}
+@keyframes blink{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+@keyframes pop{to{opacity:1;transform:translateY(0) scale(1)}}
+/* floating badges around phone */
+.float-badge{
+  position:absolute;background:rgba(20,26,23,.85);border:1px solid var(--line);border-radius:14px;
+  padding:9px 14px;font-size:.75rem;font-weight:600;color:#fff;box-shadow:var(--shadow-m);backdrop-filter:blur(10px);
+  display:flex;align-items:center;gap:8px;z-index:3;
+  animation:floaty 4.5s ease-in-out infinite;
+}
+.float-badge .ic{width:24px;height:24px;border-radius:8px;background:var(--bubble);display:grid;place-items:center;font-size:.8rem;flex:none}
+.fb1{top:8%;left:-6%}
+.fb2{bottom:16%;right:-8%;animation-delay:1.4s}
+.fb3{top:44%;left:-14%;animation-delay:2.6s}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
+
+/* ============ SECTIONS ============ */
+section{padding:80px 0}
+.sec-head{max-width:40rem;margin-bottom:46px}
+.sec-head .eyebrow{margin-bottom:14px}
+h2{font-family:var(--display);font-weight:800;letter-spacing:-.02em;font-size:clamp(1.8rem,3.6vw,2.5rem);line-height:1.12;margin-bottom:12px;color:#fff}
+.sec-head p{color:var(--muted);font-size:1.02rem}
+
+/* logos strip */
+.strip{border-block:1px solid var(--line-soft);padding:22px 0}
+.strip .wrap{display:flex;gap:14px 34px;justify-content:center;flex-wrap:wrap;font-size:.85rem;font-weight:600;color:var(--muted)}
+.strip span::before{content:"● ";color:var(--green);font-size:.6rem;vertical-align:middle}
+
+/* use cases */
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.case{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(10px);
+  border-bottom-left-radius:5px;padding:24px;box-shadow:var(--shadow-s);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s;
+}
+.case:hover{transform:translateY(-5px);box-shadow:var(--glow);border-color:rgba(76,232,151,.35)}
+.case .ic{width:42px;height:42px;border-radius:13px;background:var(--bubble);display:grid;place-items:center;font-size:1.25rem;margin-bottom:14px}
+.case .tag{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-bottom:8px;display:block}
+.case h3{font-family:var(--display);font-size:1.1rem;font-weight:700;margin-bottom:8px;color:#fff}
+.case p{font-size:.9rem;color:var(--muted)}
+.case .sample{
+  margin-top:16px;background:var(--bubble);color:#0C4A3E;border-radius:11px;border-bottom-right-radius:3px;
+  padding:10px 13px;font-size:.78rem;line-height:1.45;box-shadow:0 1px 2px rgba(0,0,0,.2);
+}
+
+/* ============ LIVE DEMO ============ */
+.demo-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+.demo-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:28px;backdrop-filter:blur(10px)}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:.82rem;font-weight:600;margin-bottom:7px;color:var(--ink)}
+.field input,.field select{
+  width:100%;padding:12px 16px;border-radius:13px;border:1.5px solid var(--line);
+  background:rgba(255,255,255,.04);color:#fff;font:inherit;font-size:.92rem;transition:border .15s,box-shadow .15s;
+}
+.field select option{background:#12201A;color:#fff}
+.field input:focus,.field select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 4px rgba(76,232,151,.15)}
+.preview-wrap{
+  background:#EFE7DC;border-radius:var(--r);padding:26px;
+  background-image:radial-gradient(rgba(11,61,54,.07) 1.3px,transparent 1.3px);background-size:22px 22px;
+  border:1px solid var(--line);box-shadow:var(--shadow-m);
+}
+.preview-label{font-size:.75rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#5C6B62;margin-bottom:14px}
+.preview-bubble{
+  background:var(--bubble);color:#0C4A3E;border-radius:14px;border-bottom-right-radius:4px;
+  padding:13px 16px;font-size:.9rem;line-height:1.55;box-shadow:0 1px 2px rgba(0,0,0,.12);
+  max-width:92%;margin-left:auto;white-space:pre-line;
+}
+.preview-bubble .time{display:block;font-size:.65rem;color:rgba(0,0,0,.4);text-align:right;margin-top:5px}
+.preview-bubble .time .tick{color:#0A84C7;font-weight:700}
+.demo-cta{margin-top:20px;display:flex;gap:12px;flex-wrap:wrap}
+
+/* ============ HOW IT WORKS — bento, color-coded per step ============ */
+.dark{
+  background:linear-gradient(165deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid var(--line-soft);
+  color:var(--ink);border-radius:30px;padding:66px 26px;box-shadow:var(--shadow-m);
+}
+.dark h2{color:#fff}
+.dark .sec-head p{color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.step{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r);padding:26px;transition:transform .25s ease,border-color .25s,background .25s;
+  position:relative;overflow:hidden;
+}
+.step::before{
+  content:"";position:absolute;inset:0;opacity:0;transition:opacity .25s;
+  background:var(--step-glow,radial-gradient(120px 100px at 20% 0%,rgba(76,232,151,.25),transparent));
+}
+.step:hover{transform:translateY(-6px);border-color:var(--step-line,rgba(76,232,151,.4))}
+.step:hover::before{opacity:1}
+.step > *{position:relative}
+.step .n{
+  width:38px;height:38px;border-radius:12px;background:var(--step-accent,linear-gradient(135deg,var(--green),var(--lime)));
+  color:#06110D;display:grid;place-items:center;font-family:var(--display);font-weight:700;margin-bottom:16px;
+  box-shadow:0 8px 20px var(--step-shadow,rgba(76,232,151,.35));
+}
+.step h3{font-family:var(--display);font-size:1.08rem;font-weight:700;margin-bottom:8px;color:#fff}
+.step p{font-size:.9rem;color:var(--muted)}
+.step:nth-child(1){--step-accent:linear-gradient(135deg,#4CE897,#C7F970);--step-shadow:rgba(76,232,151,.35);--step-line:rgba(76,232,151,.4);--step-glow:radial-gradient(140px 120px at 15% 0%,rgba(76,232,151,.22),transparent)}
+.step:nth-child(2){--step-accent:linear-gradient(135deg,#5ECBF2,#7FE3D0);--step-shadow:rgba(94,203,242,.35);--step-line:rgba(94,203,242,.4);--step-glow:radial-gradient(140px 120px at 15% 0%,rgba(94,203,242,.22),transparent)}
+.step:nth-child(3){--step-accent:linear-gradient(135deg,#B79CF9,#F9A8D4);--step-shadow:rgba(183,156,249,.35);--step-line:rgba(183,156,249,.4);--step-glow:radial-gradient(140px 120px at 15% 0%,rgba(183,156,249,.22),transparent)}
+
+/* ============ PRICING ============ */
+.toggle-row{display:flex;align-items:center;gap:14px;margin-bottom:40px;flex-wrap:wrap}
+.toggle-row .save{font-size:.78rem;font-weight:700;background:var(--bubble);color:#0C4A3E;padding:4px 12px;border-radius:999px}
+.switch{
+  position:relative;width:56px;height:30px;background:var(--line);border-radius:999px;border:none;cursor:pointer;transition:background .2s;
+}
+.switch::after{
+  content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+  background:#fff;box-shadow:var(--shadow-s);transition:left .22s ease;
+}
+.switch[aria-checked="true"]{background:var(--green)}
+.switch[aria-checked="true"]::after{left:29px}
+.toggle-row .opt{font-size:.92rem;font-weight:600;color:var(--muted)}
+.toggle-row .opt.active{color:#fff}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:22px;align-items:start}
+.plan{
+  background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r);padding:30px;backdrop-filter:blur(10px);
+  display:flex;flex-direction:column;box-shadow:var(--shadow-s);
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s;
+}
+.plan:hover{transform:translateY(-5px);border-color:rgba(76,232,151,.35)}
+.plan.popular{border-color:rgba(76,232,151,.6);box-shadow:var(--glow);position:relative}
+.plan.popular::before{
+  content:"Most popular";position:absolute;top:-13px;left:26px;
+  background:linear-gradient(135deg,var(--green),var(--lime));color:#06110D;font-size:.72rem;font-weight:700;
+  padding:5px 14px;border-radius:999px;box-shadow:var(--shadow-s);
+}
+.plan h3{font-family:var(--display);font-weight:700;font-size:1.12rem;margin-bottom:5px;color:#fff}
+.plan .for{font-size:.85rem;color:var(--muted);margin-bottom:18px}
+.price{font-family:var(--display);font-weight:800;font-size:2.2rem;letter-spacing:-.02em;line-height:1;color:#fff}
+.price span{font-size:.85rem;font-weight:500;color:var(--muted);font-family:var(--body)}
+.billed{font-size:.78rem;color:var(--muted);min-height:1.2em;margin-top:5px}
+.plan ul{list-style:none;margin:20px 0 26px;flex:1}
+.plan li{font-size:.9rem;padding:8px 0;border-bottom:1px dashed var(--line-soft)}
+.plan li::before{content:"✓ ";color:var(--green);font-weight:700}
+
+/* ============ FAQ ============ */
+.faq{max-width:46rem}
+details{
+  background:var(--surface);border:1px solid var(--line);border-radius:15px;backdrop-filter:blur(10px);
+  padding:18px 22px;margin-bottom:11px;transition:border-color .2s;
+}
+details[open]{border-color:rgba(76,232,151,.35)}
+summary{font-weight:600;cursor:pointer;font-size:.96rem;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;color:#fff}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-family:var(--display);font-size:1.3rem;color:var(--green);transition:transform .2s;flex:none}
+details[open] summary::after{transform:rotate(45deg)}
+details p{margin-top:12px;font-size:.9rem;color:var(--muted)}
+
+/* ============ CTA + FOOTER ============ */
+.final-cta{text-align:center}
+.final-cta .lede{margin-inline:auto}
+footer{border-top:1px solid var(--line-soft);padding:38px 0;font-size:.88rem;color:var(--muted)}
+.foot{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+.foot a{color:var(--lime);text-decoration:none;font-weight:600}
+.foot a:hover{text-decoration:underline}
+
+/* floating WhatsApp */
+.wa-float{
+  position:fixed;right:20px;bottom:20px;z-index:95;width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--green),var(--green-2));display:grid;place-items:center;text-decoration:none;
+  box-shadow:0 12px 32px rgba(76,232,151,.45);transition:transform .18s;
+}
+.wa-float:hover{transform:scale(1.08)}
+.wa-float svg{width:29px;height:29px;fill:#06110D}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translate(-50%,80px);z-index:99;
+  background:#fff;color:#0B3D36;padding:13px 22px;border-radius:999px;font-size:.9rem;font-weight:600;
+  box-shadow:var(--shadow-l);opacity:0;transition:.35s ease;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:860px){
+  .hero{grid-template-columns:1fr;padding-top:44px;gap:44px}
+  .demo-grid{grid-template-columns:1fr}
+  .nav-links,.nav .btn{display:none}
+  .burger{display:block}
+  section{padding:56px 0}
+  .fb1{left:0}.fb2{right:0}.fb3{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#"><span class="logo-mark">N</span>Notiwave</a>
+    <nav class="nav-links">
+      <a href="#usecases">Use cases</a>
+      <a href="#demo">Live demo</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn" href="#waitlist">Join waitlist</a>
+    <button class="burger" id="burger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+<nav class="mobile-menu" id="mobileMenu">
+  <a href="#usecases">Use cases</a>
+  <a href="#demo">Live demo</a>
+  <a href="#how">How it works</a>
+  <a href="#pricing">Pricing</a>
+  <a href="#faq">FAQ</a>
+  <a href="#waitlist" style="color:var(--green)">→ Join waitlist</a>
+</nav>
+
+<main>
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>Beta opening soon — India</span>
+      <h1>Your business messages, sent <span class="hl">automatically</span> on WhatsApp</h1>
+      <p class="lede">Appointment reminders, order updates and payment alerts — delivered to your customers on the app they already use. Built for clinics, restaurants, coaching centres and retail shops.</p>
+
+      <form id="waitlist" class="waitlist" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <input type="email" name="email" id="wlEmail" placeholder="Enter your email" required aria-label="Email address">
+        <button class="btn green" type="submit" id="wlBtn">Get early access</button>
+      </form>
+      <p class="form-note"><span>Free during beta</span><span>No card required</span><span>Official WhatsApp API</span></p>
+      <p class="form-ok" id="formOk">✓ You're on the list! We'll message you when Notiwave opens up.</p>
+
+      <div class="stats">
+        <div class="stat"><div class="v">98%</div><div class="l">WhatsApp open rate</div></div>
+        <div class="stat"><div class="v">&lt;5 sec</div><div class="l">Delivery time</div></div>
+        <div class="stat"><div class="v">24/7</div><div class="l">Runs on schedule</div></div>
+      </div>
+    </div>
+
+    <div class="phone-zone">
+      <div class="float-badge fb1"><span class="ic">📅</span>Reminder sent ✓</div>
+      <div class="float-badge fb2"><span class="ic">💳</span>Payment received</div>
+      <div class="float-badge fb3"><span class="ic">🛵</span>Order out for delivery</div>
+      <div class="phone" aria-hidden="true">
+        <div class="screen">
+          <div class="chat-top">
+            <div class="avatar" id="chatAvatar">S</div>
+            <div>
+              <div class="name" id="chatName">Sri Clinic</div>
+              <div class="status">via Notiwave · online</div>
+            </div>
+          </div>
+          <div class="chat-body" id="chatBody"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="strip rv">
+  <div class="wrap">
+    <span>Clinics</span><span>Restaurants</span><span>Coaching centres</span>
+    <span>Retail shops</span><span>Salons</span><span>Service centres</span>
+  </div>
+</div>
+
+<section id="usecases">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Use cases</span>
+      <h2>One tool. Every reminder your business sends.</h2>
+      <p>If you type the same message to customers every day, Notiwave can send it for you.</p>
+    </div>
+    <div class="cases">
+      <div class="case rv">
+        <div class="ic">🏥</div>
+        <span class="tag">Clinics</span>
+        <h3>Appointment reminders</h3>
+        <p>Cut no-shows with automatic reminders the evening before and the morning of every appointment.</p>
+        <div class="sample">Hi Priya! Reminder: your appointment with Dr. Kumar is tomorrow at <b>10:30 AM</b>. Reply 1 to confirm.</div>
+      </div>
+      <div class="case rv">
+        <div class="ic">🍽️</div>
+        <span class="tag">Restaurants</span>
+        <h3>Order updates</h3>
+        <p>Keep customers informed from order placed to out-for-delivery — without a single manual message.</p>
+        <div class="sample">Your order <b>#248</b> is ready for pickup! Show this message at the counter. 🎉</div>
+      </div>
+      <div class="case rv">
+        <div class="ic">📚</div>
+        <span class="tag">Coaching centres</span>
+        <h3>Class &amp; fee alerts</h3>
+        <p>Notify parents about class timings, test schedules and fee due dates in one broadcast.</p>
+        <div class="sample">Reminder: NEET batch test on <b>Saturday 9 AM</b>. Fee for July is due by the 5th.</div>
+      </div>
+      <div class="case rv">
+        <div class="ic">🛍️</div>
+        <span class="tag">Retail shops</span>
+        <h3>Payment &amp; offer alerts</h3>
+        <p>Send payment confirmations, due reminders and festival offers to your regular customers.</p>
+        <div class="sample">Payment of <b>₹2,499</b> received. Thank you! Diwali offer: 15% off till Sunday 🪔</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="demo" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Try it live</span>
+      <h2>See your business message in seconds</h2>
+      <p>Type your details — watch the message build itself. Then send a real copy to your own WhatsApp.</p>
+    </div>
+    <div class="demo-grid">
+      <div class="demo-card rv">
+        <div class="field">
+          <label for="dBiz">Your business name</label>
+          <input id="dBiz" type="text" placeholder="e.g. Sri Krishna Sweets" value="Sri Clinic" maxlength="40">
+        </div>
+        <div class="field">
+          <label for="dCust">Customer name</label>
+          <input id="dCust" type="text" placeholder="e.g. Priya" value="Priya" maxlength="30">
+        </div>
+        <div class="field">
+          <label for="dType">Message type</label>
+          <select id="dType">
+            <option value="appt">Appointment reminder</option>
+            <option value="order">Order update</option>
+            <option value="fee">Fee due reminder</option>
+            <option value="offer">Festival offer</option>
+          </select>
+        </div>
+        <div class="demo-cta">
+          <a class="btn green" id="dSend" href="#" target="_blank" rel="noopener">Send to my WhatsApp →</a>
+          <button class="btn ghost" id="dCopy" type="button">Copy message</button>
+        </div>
+      </div>
+      <div class="preview-wrap rv">
+        <div class="preview-label">Live preview — customer's phone</div>
+        <div class="preview-bubble" id="dPreview"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" style="padding-top:0">
+  <div class="wrap">
+    <div class="dark rv">
+      <div class="sec-head">
+        <span class="eyebrow" style="background:rgba(76,232,151,.10);border-color:rgba(76,232,151,.35);color:var(--lime)">How it works</span>
+        <h2>Live in 15 minutes. No developer needed.</h2>
+        <p>Notiwave runs on the official WhatsApp Business API — your number stays safe and messages land reliably.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="n">1</div>
+          <h3>Connect your number</h3>
+          <p>Link your WhatsApp Business number to Notiwave with a simple guided setup.</p>
+        </div>
+        <div class="step">
+          <div class="n">2</div>
+          <h3>Pick your templates</h3>
+          <p>Choose from ready-made reminder and alert templates in English or Tamil — or write your own.</p>
+        </div>
+        <div class="step">
+          <div class="n">3</div>
+          <h3>Messages go out on time</h3>
+          <p>Upload your customer list or connect your billing tool. Notiwave sends every message on schedule.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Pricing</span>
+      <h2>Simple pricing in rupees</h2>
+      <p>Start free during beta. Pay only when it's earning its keep.</p>
+    </div>
+    <div class="toggle-row rv">
+      <span class="opt active" id="optM">Monthly</span>
+      <button class="switch" id="billSwitch" role="switch" aria-checked="false" aria-label="Toggle yearly billing"></button>
+      <span class="opt" id="optY">Yearly</span>
+      <span class="save">2 months free</span>
+    </div>
+    <div class="plans">
+      <div class="plan rv">
+        <h3>Starter</h3>
+        <p class="for">For single shops &amp; clinics</p>
+        <div class="price">₹<span class="amt" data-m="799" data-y="666">799</span><span>/month</span></div>
+        <div class="billed" data-y="Billed ₹7,990 yearly">&nbsp;</div>
+        <ul>
+          <li>1,000 messages / month</li>
+          <li>1 WhatsApp number</li>
+          <li>Ready-made templates</li>
+          <li>Customer list upload (Excel)</li>
+        </ul>
+        <a class="btn ghost" href="#waitlist">Join waitlist</a>
+      </div>
+      <div class="plan popular rv">
+        <h3>Growth</h3>
+        <p class="for">For busy businesses</p>
+        <div class="price">₹<span class="amt" data-m="1,999" data-y="1,666">1,999</span><span>/month</span></div>
+        <div class="billed" data-y="Billed ₹19,990 yearly">&nbsp;</div>
+        <ul>
+          <li>5,000 messages / month</li>
+          <li>Scheduled broadcasts</li>
+          <li>Custom templates (English + Tamil)</li>
+          <li>Delivery reports</li>
+          <li>WhatsApp support</li>
+        </ul>
+        <a class="btn green" href="#waitlist">Join waitlist</a>
+      </div>
+      <div class="plan rv">
+        <h3>Pro</h3>
+        <p class="for">For multi-branch businesses</p>
+        <div class="price">₹<span class="amt" data-m="4,999" data-y="4,166">4,999</span><span>/month</span></div>
+        <div class="billed" data-y="Billed ₹49,990 yearly">&nbsp;</div>
+        <ul>
+          <li>20,000 messages / month</li>
+          <li>Multiple numbers &amp; branches</li>
+          <li>API access for your software</li>
+          <li>Priority support</li>
+        </ul>
+        <a class="btn ghost" href="#waitlist">Join waitlist</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">FAQ</span>
+      <h2>Questions, answered</h2>
+    </div>
+    <div class="faq">
+      <details class="rv">
+        <summary>Will my WhatsApp number get banned?</summary>
+        <p>No. Notiwave uses the official WhatsApp Business API from Meta, not unofficial automation tools. Messages are sent through approved templates, which keeps your number fully compliant.</p>
+      </details>
+      <details class="rv">
+        <summary>Do my customers need to install anything?</summary>
+        <p>No. Messages arrive in their normal WhatsApp, just like a message from any business.</p>
+      </details>
+      <details class="rv">
+        <summary>Can I send messages in Tamil?</summary>
+        <p>Yes. Templates can be created in Tamil, English or both — approval works the same way.</p>
+      </details>
+      <details class="rv">
+        <summary>How is this different from WhatsApp Business app broadcasts?</summary>
+        <p>The free app needs you to send everything manually, and broadcasts only reach people who saved your number. Notiwave sends automatically on schedule, to every customer, with delivery reports.</p>
+      </details>
+      <details class="rv">
+        <summary>What happens when the beta ends?</summary>
+        <p>Early access users get a locked-in discount on their first year. You'll never be moved to a paid plan without confirming it first.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta" style="padding-top:0">
+  <div class="wrap rv">
+    <h2>Stop typing the same message every day</h2>
+    <p class="lede" style="margin-bottom:26px">Join the waitlist and be first in line when Notiwave opens for beta.</p>
+    <a class="btn green" href="#waitlist" style="font-size:1.05rem;padding:15px 34px">Get early access →</a>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div>© 2026 Dev Tech Pvt Ltd · Notiwave · Made in Tamil Nadu, India 🇮🇳</div>
+    <div><a href="mailto:kathirvel301@gmail.com">kathirvel301@gmail.com</a> · <a href="https://wa.me/918675395370">WhatsApp us</a></div>
+  </div>
+</footer>
+
+<a class="wa-float" href="https://wa.me/918675395370?text=Hi%2C%20I%27m%20interested%20in%20Notiwave" aria-label="Chat with us on WhatsApp" target="_blank" rel="noopener">
+  <svg viewBox="0 0 32 32"><path d="M16 3C9.4 3 4 8.3 4 14.9c0 2.6.8 5 2.3 7L4.2 28l6.3-2c2 1.1 4.2 1.7 6.5 1.7 6.6 0 12-5.3 12-11.9S22.6 3 16 3zm0 21.7c-2 0-3.9-.6-5.6-1.6l-.4-.2-3.7 1.2 1.2-3.6-.3-.4c-1.2-1.7-1.9-3.7-1.9-5.8 0-5.5 4.8-9.9 10.7-9.9s10.7 4.4 10.7 9.9-4.8 10.4-10.7 10.4zm5.9-7.5c-.3-.2-1.9-1-2.2-1.1-.3-.1-.5-.2-.7.2-.2.3-.8 1.1-1 1.3-.2.2-.4.2-.7.1-.3-.2-1.4-.5-2.6-1.6-1-.9-1.6-1.9-1.8-2.2-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.3.3-.6.1-.2 0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.7s1.2 3.1 1.3 3.3c.2.2 2.3 3.5 5.6 4.9.8.3 1.4.5 1.9.7.8.2 1.5.2 2.1.1.6-.1 1.9-.8 2.2-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4z"/></svg>
+</a>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ CONFIG ============ */
+const WA_NUMBER = '918675395370';           // your WhatsApp number
+const FORM_ACTION = document.getElementById('waitlist').action; // Formspree (optional)
+
+/* ============ helpers ============ */
+const $ = (s)=>document.querySelector(s);
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function timeStamp(){
+  const n = new Date();
+  const h = n.getHours()%12 || 12;
+  return h + ':' + String(n.getMinutes()).padStart(2,'0') + (n.getHours()>=12?' PM':' AM');
+}
+
+/* ============ scroll reveal ============ */
+const io = new IntersectionObserver((es)=>{
+  es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('on'); io.unobserve(e.target);} });
+},{threshold:.12});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+/* ============ mobile menu ============ */
+const burger = $('#burger'), menu = $('#mobileMenu');
+burger.addEventListener('click', ()=>{
+  const open = menu.classList.toggle('open');
+  burger.classList.toggle('open', open);
+  burger.setAttribute('aria-expanded', open);
+});
+menu.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>{
+  menu.classList.remove('open'); burger.classList.remove('open');
+  burger.setAttribute('aria-expanded','false');
+}));
+
+/* ============ animated chat demo ============ */
+const scenes = [
+  { name:'Sri Clinic', av:'S', msgs:[
+    {t:'in',  m:'Hi, I booked an appointment for tomorrow'},
+    {t:'out', m:'Hi Priya! ✅ Confirmed: <b>Dr. Kumar, 10:30 AM tomorrow</b>. We\'ll remind you in the morning.'},
+    {t:'out', m:'⏰ Good morning! Your appointment is at <b>10:30 AM today</b>. Reply 1 to confirm, 2 to reschedule.'},
+    {t:'in',  m:'1'},
+    {t:'out', m:'Great, see you at 10:30! 🙏'}
+  ]},
+  { name:'Anbu Biriyani', av:'A', msgs:[
+    {t:'out', m:'Your order <b>#248</b> is being prepared 🍳'},
+    {t:'out', m:'Order <b>#248</b> is out for delivery! Arriving in ~20 mins 🛵'},
+    {t:'in',  m:'Received, thank you!'},
+    {t:'out', m:'Enjoy your meal! Rate us ⭐⭐⭐⭐⭐'}
+  ]},
+  { name:'Vidhya Academy', av:'V', msgs:[
+    {t:'out', m:'Reminder: July fee of <b>₹3,500</b> is due by the 5th 💳'},
+    {t:'in',  m:'Paid just now'},
+    {t:'out', m:'✅ Payment of <b>₹3,500</b> received. Receipt sent. Thank you!'}
+  ]}
+];
+const body = $('#chatBody');
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let scene = 0;
+
+function addMsg(msg){
+  const el = document.createElement('div');
+  el.className = 'msg ' + msg.t;
+  const tick = msg.t==='out' ? ' <span class="tick">✓✓</span>' : '';
+  el.innerHTML = msg.m + '<span class="time">' + timeStamp() + tick + '</span>';
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+}
+function playScene(){
+  const s = scenes[scene];
+  body.innerHTML = '';
+  $('#chatName').textContent = s.name;
+  $('#chatAvatar').textContent = s.av;
+  let delay = 400;
+  s.msgs.forEach((msg)=>{
+    if(reduce){ addMsg(msg); return; }
+    if(msg.t === 'out'){
+      // typing indicator before outgoing messages
+      setTimeout(()=>{
+        const ty = document.createElement('div');
+        ty.className = 'typing'; ty.innerHTML = '<i></i><i></i><i></i>';
+        body.appendChild(ty); body.scrollTop = body.scrollHeight;
+        setTimeout(()=>{ ty.remove(); addMsg(msg); }, 750);
+      }, delay);
+      delay += 1900;
+    } else {
+      setTimeout(()=>addMsg(msg), delay);
+      delay += 1150;
+    }
+  });
+  scene = (scene+1) % scenes.length;
+  setTimeout(playScene, reduce ? 6000 : delay + 3200);
+}
+playScene();
+
+/* ============ live template builder ============ */
+const templates = {
+  appt : (b,c)=>`Hi ${c}! ⏰ Reminder from *${b}*: your appointment is tomorrow at 10:30 AM.\nReply 1 to confirm, 2 to reschedule.`,
+  order: (b,c)=>`Hi ${c}! Your order from *${b}* is out for delivery 🛵\nArriving in ~20 minutes. Track: notifyly.in/t/248`,
+  fee  : (b,c)=>`Hi ${c}, gentle reminder from *${b}*: fee of ₹3,500 for July is due by the 5th.\nPay here: notifyly.in/pay 💳`,
+  offer: (b,c)=>`Hi ${c}! 🪔 Festival special at *${b}* — 15% off till Sunday.\nShow this message at the counter to redeem!`
+};
+const dBiz = $('#dBiz'), dCust = $('#dCust'), dType = $('#dType');
+const dPreview = $('#dPreview'), dSend = $('#dSend');
+let currentMsg = '';
+function renderPreview(){
+  const b = dBiz.value.trim() || 'Your Business';
+  const c = dCust.value.trim() || 'Customer';
+  currentMsg = templates[dType.value](b,c);
+  // WhatsApp-style bold: *text* → <b>text</b>
+  const html = currentMsg
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/\*(.+?)\*/g,'<b>$1</b>');
+  dPreview.innerHTML = html + '<span class="time">' + timeStamp() + ' <span class="tick">✓✓</span></span>';
+  dSend.href = 'https://wa.me/?text=' + encodeURIComponent(currentMsg.replace(/\n/g,'\n'));
+}
+[dBiz,dCust,dType].forEach(el=>el.addEventListener('input', renderPreview));
+renderPreview();
+
+$('#dCopy').addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(currentMsg);
+    toast('Message copied! 📋');
+  }catch{
+    toast('Copy not supported on this browser');
+  }
+});
+
+/* ============ pricing toggle ============ */
+const billSwitch = $('#billSwitch');
+billSwitch.addEventListener('click', ()=>{
+  const yearly = billSwitch.getAttribute('aria-checked') !== 'true';
+  billSwitch.setAttribute('aria-checked', yearly);
+  $('#optM').classList.toggle('active', !yearly);
+  $('#optY').classList.toggle('active', yearly);
+  document.querySelectorAll('.amt').forEach(a=>{
+    a.textContent = yearly ? a.dataset.y : a.dataset.m;
+  });
+  document.querySelectorAll('.billed').forEach(b=>{
+    b.textContent = yearly ? b.dataset.y : '\u00a0';
+  });
+});
+
+/* ============ waitlist form ============ */
+/* Works two ways:
+   1. If you set a real Formspree ID in the form action → submits there.
+   2. If the placeholder is still there → opens WhatsApp with the email prefilled,
+      so leads land directly in your WhatsApp. Zero setup needed. */
+const form = $('#waitlist');
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = $('#wlEmail').value.trim();
+  const btn = $('#wlBtn');
+
+  if(FORM_ACTION.includes('YOUR_FORM_ID')){
+    // WhatsApp fallback — works with no backend at all
+    const txt = `Hi! I want early access to Notiwave. My email: ${email}`;
+    window.open('https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(txt), '_blank');
+    form.style.display = 'none';
+    $('#formOk').style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Joining…';
+  try{
+    const res = await fetch(FORM_ACTION, {
+      method:'POST', body:new FormData(form),
+      headers:{'Accept':'application/json'}
+    });
+    if(!res.ok) throw new Error();
+    form.style.display = 'none';
+    $('#formOk').style.display = 'block';
+    toast('Welcome aboard! 🎉');
+  }catch{
+    btn.disabled = false; btn.textContent = 'Get early access';
+    toast('Something went wrong — try the WhatsApp button!');
+  }
+});
+</script>
+</body>
+</html>
